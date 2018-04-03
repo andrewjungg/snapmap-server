@@ -9,8 +9,12 @@
     "body-parser": "^1.18.2",
     "express": "^4.16.3",
     "firebase": "^4.12.1",
+    "firebase-admin": "^5.11.0",
     "node-cloud-vision-api": "^0.2.0",
-    "tedious": "^2.3.1"
+    "tedious": "^2.3.1",
+    "uuid-v4": "^0.1.0",
+    "xhr2": "^0.1.4",
+    "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {},
   "scripts": {
