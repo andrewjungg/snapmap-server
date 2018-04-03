@@ -41,6 +41,7 @@ var fs = require('fs');
 
 // Global vars 
 let base64encoder = '';
+let locationResults = [];
 
 // Location Object
 function locationObject(desc, score, lat, lng) {
@@ -51,30 +52,40 @@ function locationObject(desc, score, lat, lng) {
 }
 
 // Only function that is exposed to server
-function retrieveResults(key, encoder) {
-  // Set global object as the base64 (so not pass around) 
-  var imageFile = fs.readFileSync(encoder);
-  base64encoder = new Buffer(imageFile).toString('base64');
+async function retrieveResults(key, encoder) {
+  var obj = await new Promise(function(resolve, reject){
+    // Set global object as the base64 (so not pass around) 
+    var imageFile = fs.readFileSync(encoder);
+    base64encoder = new Buffer(imageFile).toString('base64');
 
-  // Check Azure if ImageKey is in database 
-  queryStr = "SELECT ID from dbo.ImageKeys WHERE ImageKey = '" + key + "'";
-  retrieveId(queryStr, key, encoder);
+    // Check Azure if ImageKey is in database 
+    queryStr = "SELECT ID from dbo.ImageKeys WHERE ImageKey = '" + key + "'";
+    var ans = retrieveId(queryStr, key, encoder);
+    resolve(ans);  
+    console.log(ans);  
+  });
+  return obj;
 }
 
-function retrieveId(queryStr, key) {
+async function retrieveId(queryStr, key) {
+  var obj = new Promise(function(resolve, reject){
   // Connect to a database
   var connection = new Connection(db_conn_info);
   connection.on('connect', function(err) {
       if (err) {
         console.log(err)
       } else {
-        returnIdEntries(queryStr, key, connection);
+        var ans = returnIdEntries(queryStr, key, connection);
+        resolve(ans);
       }
   });
+});
+return obj;
 }
 
 // execute input query and iterate through the results set
-function returnIdEntries(input, key, connection) { 
+async function returnIdEntries(input, key, connection) { 
+  var obj = await new Promise(function(resolve, reject) { 
   var id = 0;
   // setup a query request
   var request = new Request(input, function(err, rowCount, rows) {
@@ -91,50 +102,56 @@ function returnIdEntries(input, key, connection) {
       if (id == 0) {
         // Not in Azure database - Send base64 code to Cloud Vision
         // Retrieve Cloud Vision results and save to Azure database
-        var req = createBase64LandmarkRequest(base64encoder);
-        annotateRequest(req, key, connection);
-
+        var req = createBase64LandmarkRequest(base64encoder);        
+        var ans = annotateRequest(req, key, connection);    
+        resolve(ans);   
       } else {
         // Inside Azure database - retrieve results and send to Client
         var queryStr = "SELECT Description, Score, Lat, Lng FROM dbo.Results WHERE ID = " + id;
-        retrieveAzureResults(queryStr, connection);
+        var ans = retrieveAzureResults(queryStr, connection);
+        resolve(ans);
       }
     }
   );
   // run the query request
   connection.execSql(request);
+});
+return obj;
 }
 
-function retrieveAzureResults(input,connection) { 
-  var locationObjects = [];
+async function retrieveAzureResults(input,connection) { 
+  var obj = new Promise(function(resolve, reject){
+    var locationObjects = [];
 
-  // setup a query request
-  var request = new Request(input, function(err, rowCount, rows) {
-      console.log(rowCount + ' row(s) returned');
-      rows.forEach(function(row) {
-        var desc, score, lat, lng;
-        row.forEach(function(column) {          
-          if (column.metadata.colName == 'Description' && column.value != "") {
-            desc = column.value; 
-          } else if (column.metadata.colName == 'Score' && column.value != "") {
-            score = column.value; 
-          } else if (column.metadata.colName == 'Lat' && column.value != "") {
-            lat = column.value; 
-          } else if (column.metadata.colName == 'Lng' && column.value != "") {
-            lng = column.value; 
-          }
-        });   
-        // Create location object     
-        locationObjects.push(new locationObject(desc, score, lat, lng));          
+    // setup a query request
+    var request = new Request(input, function(err, rowCount, rows) {
+        console.log(rowCount + ' row(s) returned');
+        rows.forEach(function(row) {
+          var desc, score, lat, lng;
+          row.forEach(function(column) {          
+            if (column.metadata.colName == 'Description' && column.value != "") {
+              desc = column.value; 
+            } else if (column.metadata.colName == 'Score' && column.value != "") {
+              score = column.value; 
+            } else if (column.metadata.colName == 'Lat' && column.value != "") {
+              lat = column.value; 
+            } else if (column.metadata.colName == 'Lng' && column.value != "") {
+              lng = column.value; 
+            }
+          });   
+          // Create location object     
+          locationObjects.push(new locationObject(desc, score, lat, lng));          
+        });
+
+        console.log(locationObjects); // HERE 
+        resolve(locationObjects);      
+        //process.exit();    
       });
-
-      console.log(locationObjects); // HERE       
-      //process.exit();    
-    }
-  );
 
   // run the query request
   connection.execSql(request);
+  });
+  return obj;
 }
 
 // Create Requests for Local Files 
@@ -181,7 +198,8 @@ function createBase64LandmarkRequest(encoder) {
 }
 
 // Annotate Request, send request to Cloud Vision API 
-function annotateRequest(req, key, connection) {
+async function annotateRequest(req, key, connection) {
+  var obj = await new Promise(function(resolve, reject) {
 vision.annotate(req)
   .then((res) => {    
       res.responses.forEach(function(response) {
@@ -202,20 +220,24 @@ vision.annotate(req)
           var id = rows[0][0].value;
 
           // Process results into format to return to SnapMapServer and Client 
-          formatResults(webDetection, id, connection);
+          var ans = formatResults(webDetection, id, connection);          
+          resolve(ans);
         });    
         connection.execSql(request);
       });
   }, (e) => {
     console.log('Error: ', e)
-  });    
+  });   
+});
+return obj;
 }
 
-function formatResults(webEntities, id, connection) {
+async function formatResults(webEntities, id, connection) {
   var results = [];
   var length = webEntities.length;
 
   // for each Web Entity, must find a lat/lng 
+  var obj = await new Promise(function(resolve, reject){
   webEntities.forEach(function(label) {
     if (label.description) {
       googleMapsClient.geocode({
@@ -240,6 +262,8 @@ function formatResults(webEntities, id, connection) {
           });          
           insertIntoAzure(queryStr, connection);
           console.log(results); // HERE
+          resolve(results);
+          
         }
       })
       .catch((err) => {
@@ -247,17 +271,22 @@ function formatResults(webEntities, id, connection) {
       });
     }
   });
+});
+return obj;
 }
 
 function insertIntoAzure(queryStr, connection) {
-  let request = new Request(queryStr, function(err, rowCount, rows) {
-    console.log(rowCount + ' row(s) returned');
-  });
-  // run the query request
-  connection.execSql(request);    
+ // return new Promise(resolve => {
+    let request = new Request(queryStr, function(err, rowCount, rows) {
+      console.log(rowCount + ' row(s) returned');
+    });
+    // run the query request
+    connection.execSql(request); 
+//  });   
 }
 
-function test(str) {
+async function test(str) {
+  var object = new Promise(function(resolve, reject){
   var connection = new Connection(db_conn_info);
   connection.on('connect', function(err) {
       if (err) {
@@ -271,13 +300,15 @@ function test(str) {
         .then((res) => {    
             console.log('result is: ');  
             console.log(res);
-            return res;
+            resolve(res);
             // Instead of sending back, post onto the database, then send?
           }, (e) => {
             console.log('Error: ', e)
           });              
       }
   });
+});
+return object;
 }
 
 // TODO: Remove, just for test 

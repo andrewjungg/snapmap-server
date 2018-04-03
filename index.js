@@ -9,23 +9,7 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   
 var cvs = require('./cloud-vision-server.js');
 
-var port = 8080;//process.env.PORT || 3000;
-
-//access control for port for frontend
-// app.use(bodyParser.json(), function(req, res, next) {
-// 	//allow multiple origins
-// 	var allowedOrigins = ['http://localhost:8080', 'http://localhost:3000'];
-// 	var origin = req.headers.origin;
-//   	if(allowedOrigins.indexOf(origin) > -1){
-//         res.header('Access-Control-Allow-Origin', origin);
-//   	}
-//     res.header("Access-Control-Allow-Credentials", 'true');
-//     res.header(
-//       "Access-Control-Allow-Headers",
-//       "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-//     );
-//     next();
-// });
+var port = process.env.PORT || 3000; //8080; 
 
 // Request looks like this: 
 //data = {"postProcessedImage": [
@@ -35,21 +19,18 @@ var port = 8080;//process.env.PORT || 3000;
 //	}
 //]}
 
-
 app.post('/imgData', (req, res) => {
     console.log("Post request sent!");
     console.log(req);
-
     var key = req.body.postProcessedImage[0].pp_ID.toString();
     var encoder = req.body.postProcessedImage[0].pp_IMG.toString(); // TODO: Fix as will be passing base64, not image 
 
     console.log(key);
     console.log(encoder);
 
-    cvs.retrieveResults(key, encoder);
-
-   // var results = cvs.test(req.body.request);
-    res.status(200).json(req.body.postProcessedImage);
+    var results = cvs.retrieveResults(key, encoder).then(function(x) {
+        res.status(200).json(x);
+    });   
 });
 
 app.get('/', (req, res) => {
@@ -59,10 +40,10 @@ app.get('/', (req, res) => {
 // //Set up a server listener on port 8080
 app.listen(port);
 
-function test(callback) {
-    var req = './1.jpg';
-    var results = cvs.test(req);
-    console.log(results);
-}
-
+// function test(callback) {
+//     var req = './1.jpg';
+//     var results = cvs.test(req);
+//     console.log('tim');
+//     console.log(results);
+// }
 //test();
