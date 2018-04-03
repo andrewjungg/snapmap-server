@@ -4,9 +4,13 @@
   "description": "snapmap-server",
   "main": "index.js",
   "dependencies": {
+    "@google-cloud/storage": "^1.6.0",
+    "@google/maps": "^0.4.6",
     "body-parser": "^1.18.2",
     "express": "^4.16.3",
-    "node-cloud-vision-api": "^0.2.0"
+    "firebase": "^4.12.1",
+    "node-cloud-vision-api": "^0.2.0",
+    "tedious": "^2.3.1"
   },
   "devDependencies": {},
   "scripts": {
