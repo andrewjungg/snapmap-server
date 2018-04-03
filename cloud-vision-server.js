@@ -48,6 +48,7 @@ var storage = require('firebase/storage');
 // Google Cloud Storage 
 const gcs = require('@google-cloud/storage')({keyFilename: 'My Project-0cbc36640d86.json'});
 const bucket = gcs.bucket('gs://my-project-1520881457378.appspot.com');
+var fs = require('fs');
 
 
 
@@ -291,38 +292,6 @@ function createBase64LandmarkRequest(encoder) {
   return req;
 }
 
-function test(str) {
-  var connection = new Connection(db_conn_info);
-  connection.on('connect', function(err) {
-      if (err) {
-        console.log(err)
-      } else {
-        test2(str);
-      }
-  });
-}
-
-//test();
-
-function test2() {
-// Read the file into memory.
-var fs = require('fs');
-//var imageFile = fs.readFileSync('./1.jpg');
-var imageFile = fs.readFileSync(str);
-
-
-// Covert the image data to a Buffer and base64 encode it.
-var base64key = new Buffer(imageFile).toString('base64');
-console.log(base64key);
-var req = createBase64LandmarkRequest(base64key);
-  vision.annotate(req)
-  .then((res) => {    
-    console.log(res);
-    }, (e) => {
-      console.log('Error: ', e)
-    });
-}
-
 // Annotate Request, send request to Cloud Vision API 
 function annotateRequest(req, key, connection) {
 vision.annotate(req)
@@ -400,5 +369,28 @@ function insertIntoAzure(queryStr, connection) {
   connection.execSql(request);    
 }
 
+function test(str) {
+  var connection = new Connection(db_conn_info);
+  connection.on('connect', function(err) {
+      if (err) {
+        console.log(err)
+      } else {
+        var imageFile = fs.readFileSync(str);
+        // Covert the image data to a Buffer and base64 encode it.
+        var base64key = new Buffer(imageFile).toString('base64');
+        var req = createBase64LandmarkRequest(base64key);
+        vision.annotate(req)
+        .then((res) => {    
+            console.log('result is: ');  
+            console.log(res);
+            return res;
+          }, (e) => {
+            console.log('Error: ', e)
+          });              
+      }
+  });
+}
+
 // TODO: Remove, just for test 
 //retrieveResults("Hey");
+test('./1.jpg');
