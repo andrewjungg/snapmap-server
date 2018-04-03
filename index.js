@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 //var axios = require('axios');
 var apiURL = "https://snapmap.azurewebsites.net";
 
-// const cvs = require('./cloud-vision-server.js');
+var cvs = require('./cloud-vision-server.js');
 
 var port = process.env.PORT || 3000;
 
@@ -25,16 +25,16 @@ var port = process.env.PORT || 3000;
 //     next();
 // });
 
-// app.post('/imgData', (req, res) => {
-//     console.log("GOT request sent!");
-//     console.log(req);
-//     //cvs.retrieveResults(req);
-//
-//     res.status(200).json({ "message": "Welcome to the endpoint"});
-// });
+app.post('/imgData', (req, res) => {
+    console.log("GOT request sent!");
+    console.log(req);
+    //cvs.retrieveResults(req);
+
+    res.status(200).json({ "message": "Welcome to the endpoint"});
+});
 
 app.get('/', (req, res) => {
-    res.send("TEST");
+    res.send("asdjflkdsajfasdf");
 });
 
 
