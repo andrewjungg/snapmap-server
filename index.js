@@ -37,9 +37,6 @@ app.get('/', (req, res) => {
     res.send("TEST");
 });
 
-// app.get('/test', (req, res) => {
-//     res.status(200).json({ "message": "Welcome to test"});
-// });
 
 // //Set up a server listener on port 8080
 app.listen(port);
