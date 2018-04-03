@@ -37,11 +37,10 @@ var db_conn_info = { // Set database connection info details
 
 
 // TODO: Delete once not reaidng base64 
-var fs = require('fs');
+// var fs = require('fs');
 
 // Global vars 
 let base64encoder = '';
-let locationResults = [];
 
 // Location Object
 function locationObject(desc, score, lat, lng) {
@@ -55,9 +54,9 @@ function locationObject(desc, score, lat, lng) {
 async function retrieveResults(key, encoder) {
   var obj = await new Promise(function(resolve, reject){
     // Set global object as the base64 (so not pass around) 
-    var imageFile = fs.readFileSync(encoder);
-    base64encoder = new Buffer(imageFile).toString('base64');
-
+    //var imageFile = fs.readFileSync(encoder);
+    //base64encoder = new Buffer(imageFile).toString('base64');
+    base64encoder = encoder;
     // Check Azure if ImageKey is in database 
     queryStr = "SELECT ID from dbo.ImageKeys WHERE ImageKey = '" + key + "'";
     var ans = retrieveId(queryStr, key, encoder);
