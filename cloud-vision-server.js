@@ -384,6 +384,7 @@ function test(str) {
             console.log('result is: ');  
             console.log(res);
             return res;
+            // Instead of sending back, post onto the database, then send?
           }, (e) => {
             console.log('Error: ', e)
           });              
@@ -391,6 +392,24 @@ function test(str) {
   });
 }
 
+function handleResult(err, result) {
+  if (err) {
+      // Just an example. You may want to do something with the error.
+      console.error(err.stack || err.message);
+
+      // You should return in this branch, since there is no result to use
+      // later and that could cause an exception.
+      return;
+  }
+  else {
+      console.log("My result is: " + result);
+      return result;
+  }
+
+  // All your logic with the result.
+}
+
+
 // TODO: Remove, just for test 
 //retrieveResults("Hey");
-test('./1.jpg');
+//test('./1.jpg');
