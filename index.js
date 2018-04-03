@@ -30,7 +30,7 @@ app.post('/imgData', (req, res) => {
     console.log(req);
     //cvs.retrieveResults(req);
 
-    res.status(200).json({ "message": "Welcome to the endpoint"});
+    res.status(200).json({ "message": req});
 });
 
 app.get('/', (req, res) => {
