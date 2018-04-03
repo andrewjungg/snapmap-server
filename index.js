@@ -12,6 +12,23 @@ var cvs = require('./cloud-vision-server.js');
 
 var port = process.env.PORT || 3000; //8080; 
 
+// Client sending base64 encoded data to server to pre-process
+// Request looks like this: 
+//    {
+//       "preprocessedImage": [{
+//            "pp_IMG": "(base64 encoded key)"
+//        }]
+//   }
+app.post('/preprocessImage', (req, res) => {
+    console.log('Post to Pre-Process module');
+    var base64encoder = req.body.preprocessedImage[0].pp_IMG.toString();
+
+    // TODO: Call the python script 
+    res.status(200).json('Yay good job Andrew, it worked!');
+});
+
+// Pre-process module sending data to Cloud-Vision-Server to clasisfy
+// Posts back results of classification
 // Request looks like this: 
 //data = {"postProcessedImage": [
 //	{
@@ -19,7 +36,6 @@ var port = process.env.PORT || 3000; //8080;
 //		"pp_IMG": encoded_img
 //	}
 //]}
-
 app.post('/imgData', (req, res) => {
     console.log("Post request sent!");
     console.log(req);
