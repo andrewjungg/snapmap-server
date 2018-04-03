@@ -27,20 +27,34 @@ var port = 8080;//process.env.PORT || 3000;
 //     next();
 // });
 
+// Request looks like this: 
+//data = {"postProcessedImage": [
+//	{
+//		"pp_ID": encoded_key, 
+//		"pp_IMG": encoded_img
+//	}
+//]}
+
+
 app.post('/imgData', (req, res) => {
-    console.log("GOT request sent!");
+    console.log("Post request sent!");
     console.log(req);
 
-    //cvs.retrieveResults(req);
+    var key = req.body.postProcessedImage[0].pp_ID.toString();
+    var encoder = req.body.postProcessedImage[0].pp_IMG.toString(); // TODO: Fix as will be passing base64, not image 
 
-    var results = cvs.test(req.body.request);
-    res.status(200).json(results);
+    console.log(key);
+    console.log(encoder);
+
+    cvs.retrieveResults(key, encoder);
+
+   // var results = cvs.test(req.body.request);
+    res.status(200).json(req.body.postProcessedImage);
 });
 
 app.get('/', (req, res) => {
     res.send("heyoo");
 });
-
 
 // //Set up a server listener on port 8080
 app.listen(port);
