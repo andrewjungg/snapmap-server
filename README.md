@@ -1,8 +1,16 @@
 # Snapmap-Server
 Server for Snapmap
 
-## PreReq
-[Have Heroku CLI installed](https://devcenter.heroku.com/articles/heroku-cli)
+## Pre Req
+1. [Have Heroku CLI installed](https://devcenter.heroku.com/articles/heroku-cli)
+2. Login to Heroku
+```bash
+heroku Login
+```
+3. Remote Heroku server is added locally
+```bash
+heroku git:remote -a <YOUR-HEROKU-SERVER-NAME>
+```
 
 ## To Deploy to Heroku
 
