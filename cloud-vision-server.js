@@ -3,9 +3,6 @@
 // npm install @google/maps --save
 // npm install tedious --save 
 
-//TODO: Once fix, delete 
-// npm install fs --save
-
 module.exports = {    
   retrieveResults,
   locationObject,
@@ -34,9 +31,6 @@ var db_conn_info = { // Set database connection info details
   }
 };
 
-// TODO: Delete once not reaidng base64 
-// var fs = require('fs');
-
 // Global vars 
 let base64encoder = '';
 
@@ -52,9 +46,8 @@ function locationObject(desc, score, lat, lng) {
 async function retrieveResults(key, encoder) {
   var obj = await new Promise(function(resolve, reject){
     // Set global object as the base64 (so not pass around) 
-    //var imageFile = fs.readFileSync(encoder);
-    //base64encoder = new Buffer(imageFile).toString('base64');
     base64encoder = encoder;
+
     // Check Azure if ImageKey is in database 
     queryStr = "SELECT ID from dbo.ImageKeys WHERE ImageKey = '" + key + "'";
     var ans = retrieveId(queryStr, key);
@@ -66,18 +59,18 @@ async function retrieveResults(key, encoder) {
 
 async function retrieveId(queryStr, key) {
   var obj = new Promise(function(resolve, reject){
-  // Connect to a database
-  var connection = new Connection(db_conn_info);
-  connection.on('connect', function(err) {
-      if (err) {
-        console.log(err)
-      } else {
-        var ans = returnIdEntries(queryStr, key, connection);
-        resolve(ans);
-      }
+    // Connect to a database
+    var connection = new Connection(db_conn_info);
+    connection.on('connect', function(err) {
+        if (err) {
+          console.log(err)
+        } else {
+          var ans = returnIdEntries(queryStr, key, connection);
+          resolve(ans);
+        }
+    });
   });
-});
-return obj;
+  return obj;
 }
 
 // execute input query and iterate through the results set
@@ -94,7 +87,6 @@ async function returnIdEntries(input, key, connection) {
             }
           });          
         });  
-      //process.exit();   
       
       if (id == 0) {
         // Not in Azure database - Send base64 code to Cloud Vision
@@ -140,13 +132,11 @@ async function retrieveAzureResults(input,connection) {
           locationObjects.push(new locationObject(desc, score, lat, lng));          
         });
 
-        console.log(locationObjects); // HERE 
+        console.log(locationObjects); 
         resolve(locationObjects);      
-        //process.exit();    
       });
-
-  // run the query request
-  connection.execSql(request);
+    // run the query request
+    connection.execSql(request);
   });
   return obj;
 }
@@ -179,7 +169,7 @@ function createUrlLandmarkRequest(urlPath) {
   return req;
 }
 
-// Create Request for URL's
+// Create Request for Base64
 function createBase64LandmarkRequest(encoder) {
   var req = new vision.Request({
     image: new vision.Image({      
@@ -229,49 +219,57 @@ vision.annotate(req)
 return obj;
 }
 
+// Formats results in a manner for the Client to use 
 async function formatResults(webEntities, id, connection) {
   var results = [];
   var length = webEntities.length;
 
-  // for each Web Entity, must find a lat/lng 
-  var obj = await new Promise(function(resolve, reject){
-  webEntities.forEach(function(label) {
-    if (label.description) {
-      googleMapsClient.geocode({
-        address: label.description
-      })
-      .asPromise()
-      .then((response) => {
-        var location = response.json.results[0].geometry.location;
-        var lat = location.lat;
-        var lng = location.lng;
-        result = new locationObject(label.description, label.score, lat, lng);
-        results.push(result);
-      })
-      .then((response) => {
-        // Foreach result from Cloud Vision, store into Azure Database - Results table 
-        if (results.length == webEntities.length-1) {
-          var queryStr = "";
-          results.forEach(function(result) {
-            // SQL statements 
-            let input = "Insert INTO Results (ID, Description, Score, Lat, Lng) VALUES  (" + id + ", '" + result.description+ "', " + result.score +", " + result.lat + ", " + result.lng + ");";
-            queryStr = queryStr + input;
-          });          
-          insertIntoAzure(queryStr, connection);
-          console.log(results); // HERE
-          resolve(results);
-          
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+  var count = 0; 
+  webEntities.forEach(function(x){
+    if (x.description) {
+      count = count + 1;
     }
   });
-});
-return obj;
+
+  // for each Web Entity, must find a lat/lng 
+  var obj = await new Promise(function(resolve, reject){
+    webEntities.forEach(function(label) {
+      if (label.description) {
+        googleMapsClient.geocode({
+          address: label.description
+        })
+        .asPromise()
+        .then((response) => {
+          var location = response.json.results[0].geometry.location;
+          var lat = location.lat;
+          var lng = location.lng;
+          result = new locationObject(label.description, label.score, lat, lng);
+          results.push(result);
+        })
+        .then((response) => {
+          // Foreach result from Cloud Vision, store into Azure Database - Results table 
+          if (results.length == count) {
+            var queryStr = "";
+            results.forEach(function(result) {
+              // SQL statements 
+              let input = "Insert INTO Results (ID, Description, Score, Lat, Lng) VALUES  (" + id + ", '" + result.description+ "', " + result.score +", " + result.lat + ", " + result.lng + ");";
+              queryStr = queryStr + input;
+            });          
+            insertIntoAzure(queryStr, connection);
+            console.log(results); 
+            resolve(results);          
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+      }
+    });
+  });
+  return obj;
 }
 
+// Insert into Azure database
 function insertIntoAzure(queryStr, connection) {
     let request = new Request(queryStr, function(err, rowCount, rows) {
       console.log(rowCount + ' row(s) returned');
