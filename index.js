@@ -7,25 +7,15 @@ app.use( bodyParser.json() );       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 })); 
-  
+
+var util = require('util');
+var spawn = require("child_process").spawn;
+var PythonShell = require('python-shell');
+var Base64 = require('compact-base64');
+
 var cvs = require('./cloud-vision-server.js');
 
 var port = process.env.PORT || 3000; //8080; 
-
-// Client sending base64 encoded data to server to pre-process
-// Request looks like this: 
-//    {
-//       "preprocessedImage": [{
-//            "pp_IMG": "(base64 encoded key)"
-//        }]
-//   }
-app.post('/preprocessImage', (req, res) => {
-    console.log('Post to Pre-Process module');
-    var base64encoder = req.body.preprocessedImage[0].pp_IMG.toString();
-
-    // TODO: Call the python script 
-    res.status(200).json('Yay good job Andrew, it worked!');
-});
 
 // Pre-process module sending data to Cloud-Vision-Server to clasisfy
 // Posts back results of classification
@@ -40,14 +30,23 @@ app.post('/imgData', (req, res) => {
     console.log("Post request sent!");
     console.log(req);
     var key = req.body.postProcessedImage[0].pp_ID.toString();
-    var encoder = req.body.postProcessedImage[0].pp_IMG.toString(); // TODO: Fix as will be passing base64, not image 
+    var encoder = req.body.postProcessedImage[0].pp_IMG.toString(); 
 
     console.log(key);
     console.log(encoder);
 
+//     //TODO: Figure out 
+//     var options = {
+//    //     args = [encoder]
+//     }
+//     PythonShell.run('preProcessImage.py', options, function (err, data) {
+//         if (err) res.send(err);
+//         res.send(data.toString())
+//     });
+
     var results = cvs.retrieveResults(key, encoder).then(function(x) {
         res.status(200).json(x);
-    });   
+    });       
 });
 
 app.get('/', (req, res) => {
@@ -56,11 +55,3 @@ app.get('/', (req, res) => {
 
 // //Set up a server listener on port 8080
 app.listen(port);
-
-// function test(callback) {
-//     var req = './1.jpg';
-//     var results = cvs.test(req);
-//     console.log('tim');
-//     console.log(results);
-// }
-//test();

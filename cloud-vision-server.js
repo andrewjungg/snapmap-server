@@ -9,7 +9,6 @@
 module.exports = {    
   retrieveResults,
   locationObject,
-  test
 };
 
 //////////////////
@@ -35,7 +34,6 @@ var db_conn_info = { // Set database connection info details
   }
 };
 
-
 // TODO: Delete once not reaidng base64 
 // var fs = require('fs');
 
@@ -59,7 +57,7 @@ async function retrieveResults(key, encoder) {
     base64encoder = encoder;
     // Check Azure if ImageKey is in database 
     queryStr = "SELECT ID from dbo.ImageKeys WHERE ImageKey = '" + key + "'";
-    var ans = retrieveId(queryStr, key, encoder);
+    var ans = retrieveId(queryStr, key);
     resolve(ans);  
     console.log(ans);  
   });
@@ -275,41 +273,9 @@ return obj;
 }
 
 function insertIntoAzure(queryStr, connection) {
- // return new Promise(resolve => {
     let request = new Request(queryStr, function(err, rowCount, rows) {
       console.log(rowCount + ' row(s) returned');
     });
     // run the query request
     connection.execSql(request); 
-//  });   
 }
-
-async function test(str) {
-  var object = new Promise(function(resolve, reject){
-  var connection = new Connection(db_conn_info);
-  connection.on('connect', function(err) {
-      if (err) {
-        console.log(err)
-      } else {
-        var imageFile = fs.readFileSync(str);
-        // Covert the image data to a Buffer and base64 encode it.
-        var base64key = new Buffer(imageFile).toString('base64');
-        var req = createBase64LandmarkRequest(base64key);
-        vision.annotate(req)
-        .then((res) => {    
-            console.log('result is: ');  
-            console.log(res);
-            resolve(res);
-            // Instead of sending back, post onto the database, then send?
-          }, (e) => {
-            console.log('Error: ', e)
-          });              
-      }
-  });
-});
-return object;
-}
-
-// TODO: Remove, just for test 
-//retrieveResults("Hey");
-//test('./1.jpg');
